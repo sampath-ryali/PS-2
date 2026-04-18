@@ -1,7 +1,8 @@
-paddleocr
-paddlepaddle
-transformers
-torch
-accelerate
-pillow
-numpy
+paddleocr>=2.7.0
+paddlepaddle>=2.5.0
+transformers>=4.36.0
+torch>=2.0.0
+accelerate>=0.24.0
+pillow>=9.0.0
+numpy>=1.21.0
+matplotlib>=3.5.0
