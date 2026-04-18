@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Models and large files
+*.pth
+*.pt
+*.bin
+*.onnx
+*.pb
+models/
+*.tar.gz
+*.zip
+
+# Data
+dataset/images/*
+!dataset/images/.gitkeep
+data/dataset/images/*
+!data/dataset/images/.gitkeep
+
+# Ollama and local models
+ollama/
+.ollama/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+check.zip
+*.log
+*.tmp
