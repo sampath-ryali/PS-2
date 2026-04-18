@@ -4,6 +4,16 @@ import json
 import matplotlib.pyplot as plt
 
 # =========================
+# HELPER (CRITICAL FIX)
+# =========================
+def to_float(val):
+    if val is None:
+        return 0
+    match = re.findall(r"[\d.]+", str(val))
+    return float(match[0]) if match else 0
+
+
+# =========================
 # TEXT NORMALIZER
 # =========================
 class TextNormalizer:
@@ -43,10 +53,10 @@ def analyze_health(data):
     score = 5
     insights = []
 
-    protein = data.get("protein") or 0
-    carbs = data.get("carbs") or 0
-    fat = data.get("fat") or 0
-    sodium = data.get("sodium") or 0
+    protein = to_float(data.get("protein"))
+    carbs = to_float(data.get("carbs"))
+    fat = to_float(data.get("fat"))
+    sodium = to_float(data.get("sodium"))
 
     if protein > 10:
         score += 2
@@ -79,8 +89,8 @@ def analyze_health(data):
 def recommend_diet(data):
     diets = []
 
-    carbs = data.get("carbs") or 0
-    protein = data.get("protein") or 0
+    carbs = to_float(data.get("carbs"))
+    protein = to_float(data.get("protein"))
 
     if carbs < 20:
         diets.append("Low carb friendly")
@@ -123,7 +133,7 @@ class QwenModel:
             result = response.json()
             text = result.get("response", "")
 
-            # Clean JSON
+            # Extract JSON safely
             if "{" in text and "}" in text:
                 text = text[text.find("{"):text.rfind("}")+1]
                 try:
@@ -164,7 +174,7 @@ Question:
 
 Rules:
 - Be short (1–2 lines)
-- Give clear reason
+- Give reason
 - Return JSON
 
 Format:
@@ -178,17 +188,32 @@ Format:
 def answer_questions(data, questions):
     answers = {}
 
+    # 🔥 Step 1: get health from RULES (not LLM)
+    health = analyze_health(data)
+    score = health["score"]
+    insights = health["insights"]
+
+    if score >= 7:
+        label = "Healthy"
+    elif score >= 4:
+        label = "Moderate"
+    else:
+        label = "Unhealthy"
+
+    # 🔥 Short reason from rules (NO LLM spam)
+    reason = ", ".join(insights) if insights else "Balanced nutrition"
+
     for q in questions:
         q_lower = q.lower()
 
         if "calorie" in q_lower:
-            answers[q] = f"{data.get('calories')} kcal"
+            answers[q] = f"{to_float(data.get('calories'))} kcal"
 
         elif "protein" in q_lower:
-            answers[q] = f"{data.get('protein')} g"
+            answers[q] = f"{to_float(data.get('protein'))} g"
 
         elif "fat" in q_lower:
-            fat = data.get("fat") or 0
+            fat = to_float(data.get("fat"))
             if fat > 20:
                 answers[q] = "High"
             elif fat > 10:
@@ -196,13 +221,19 @@ def answer_questions(data, questions):
             else:
                 answers[q] = "Low"
 
+        elif "healthy" in q_lower:
+            # 🔥 RULE-BASED OUTPUT (NO LLM HERE)
+            answers[q] = {
+                "answer": label,
+                "reason": reason
+            }
+
         else:
+            # optional LLM for other questions
             prompt = build_prompt(data, q)
             answers[q] = QwenModel.ask(prompt)
 
     return answers
-
-
 # =========================
 # RANK PRODUCTS
 # =========================
@@ -232,16 +263,16 @@ def explain_winner(ranking):
 
     reason = f"{best['product']} is the healthiest because:\n"
 
-    if best["data"]["protein"] > 10:
+    if to_float(best["data"]["protein"]) > 10:
         reason += "- High protein\n"
 
-    if best["data"]["carbs"] < 30:
+    if to_float(best["data"]["carbs"]) < 30:
         reason += "- Lower carbs\n"
 
-    if best["data"]["sodium"] < 300:
+    if to_float(best["data"]["sodium"]) < 300:
         reason += "- Low sodium\n"
 
-    if best["data"]["fat"] < 15:
+    if to_float(best["data"]["fat"]) < 15:
         reason += "- Moderate fat\n"
 
     return {
@@ -256,9 +287,9 @@ def explain_winner(ranking):
 # =========================
 def plot_comparison(products):
     labels = [f"P{i+1}" for i in range(len(products))]
-    calories = [p["calories"] for p in products]
-    protein = [p["protein"] for p in products]
-    carbs = [p["carbs"] for p in products]
+    calories = [to_float(p["calories"]) for p in products]
+    protein = [to_float(p["protein"]) for p in products]
+    carbs = [to_float(p["carbs"]) for p in products]
 
     x = range(len(products))
 
